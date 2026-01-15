@@ -506,6 +506,25 @@
       return arr;
     }
 
+// ===== ここに置く（重要）=====
+async function postStatus(name, status, note) {
+  const { data, error } = await sb.rpc("upsert_lobby", {
+    _client_id: clientId,
+    _name: name,
+    _status: status,
+    _note: note,
+    _edit_key: editKey
+  });
+
+  console.log("rpc result", data, error);
+
+  if (error) {
+    console.error(error);
+    alert(error.message);
+  }
+}
+// ===
+    
 // --- UI handlers ---
 document.getElementById("post").addEventListener("click", async () => {
   const name = normalize(elName.value);
@@ -584,6 +603,7 @@ document.getElementById("clearMine").addEventListener("click", async () => {
 </script>
 </body>
 </html>
+
 
 
 
