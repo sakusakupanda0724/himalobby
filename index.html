@@ -83,10 +83,6 @@
   pointer-events: none;
 }
 
-.bubble:hover .tooltip {
-  display: block;
-}
-
     
   </style>
 </head>
@@ -228,7 +224,20 @@ function render(entries) {
     };
 
     b.el.className = "bubble";
+    
+    b.el.onclick = (e2) => {
+      e2.stopPropagation();
+    
+      // いったん全部閉じる
+      document.querySelectorAll(".tooltip").forEach(t => {
+        t.style.display = "none";
+      });
+    
+      // 自分のだけ開く
+      tip.style.display = "block";
+    };
 
+    
 // アイコン
 const icon = document.createElement("div");
 icon.textContent = e.icon || "🫧";
@@ -318,10 +327,17 @@ async function refresh() {
 
 refresh();
 loop();
+  document.body.addEventListener("click", () => {
+  document.querySelectorAll(".tooltip").forEach(t => {
+    t.style.display = "none";
+  });
+});
+
 </script>
 
 </body>
 </html>
+
 
 
 
