@@ -498,39 +498,38 @@
       return arr;
     }
 
-    // --- UI handlers ---
-    document.getElementById("post").addEventListener("click", () => {
-      const name = normalize(elName.value);
-      if (!name) { alert("Spoon名を入れてね"); return; }
-      localStorage.setItem("hima_lobby_myname_v2", name);
-      document.getElementById("post").addEventListener("click", async () => {
-      const name = normalize(elName.value);
-      if (!name) { alert("Spoon名を入れてね"); return; }
-    
-      localStorage.setItem("hima_lobby_myname_v2", name);
-    
-      await postStatus(name, elStatus.value, elNote.value);
-    
-      elInfo.textContent = "出しました！";
-      // ❌ render() や upsertEntry() は呼ばない
-    });
+// --- UI handlers ---
+document.getElementById("post").addEventListener("click", async () => {
+  const name = normalize(elName.value);
+  if (!name) { alert("Spoon名を入れてね"); return; }
 
-    async function postStatus(name, status, note) {
-      const { error } = await sb
-        .from("lobby_entries")
-        .upsert({
-          client_id: clientId,
-          name,
-          status,
-          note,
-          updated_at: new Date().toISOString()
-        }, { onConflict: "client_id" });
-    
-      if (error) {
-        alert(error.message);
-      }
-    }
+  localStorage.setItem("hima_lobby_myname_v2", name);
 
+  await postStatus(name, elStatus.value, elNote.value);
+
+  elInfo.textContent = "出しました！";
+});
+
+// Supabaseに保存
+async function postStatus(name, status, note) {
+  const { error } = await sb
+    .from("lobby_entries")
+    .upsert(
+      {
+        client_id: clientId,
+        name,
+        status,
+        note,
+        updated_at: new Date().toISOString(),
+      },
+      { onConflict: "client_id" }
+    );
+
+  if (error) {
+    console.error(error);
+    alert(error.message);
+  }
+}
 
     document.getElementById("clearMine").addEventListener("click", () => {
       const name = normalize(elName.value);
@@ -550,12 +549,6 @@
       const entries = getEntriesFiltered();
       buildBodies(entries);
     });
-
-
-  const sb = window.supabase.createClient(
-    "https://ktoqorjcjkqmwygfsbvw.supabase.co",
-    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt0b3FvcmpjamtxbXd5Z2ZzYnZ3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg0NDk3OTQsImV4cCI6MjA4NDAyNTc5NH0.GRM8Yi6g2lGEvgfatHFeZhB6jPPZRlcNMfQK2d8Kc0I"
-  );
 
   // === 匿名 client_id ===
   const CLIENT_KEY = "hima_lobby_client_id";
@@ -602,6 +595,7 @@
 </script>
 </body>
 </html>
+
 
 
 
