@@ -1,0 +1,532 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>ヒマロビー（ふわふわ）</title>
+  <style>
+    :root{
+      --bg:#f6f7f8; --card:#fff; --line:#e5e7eb; --text:#111; --muted:#666;
+    }
+    body{
+      margin:0; font-family:system-ui,-apple-system,sans-serif;
+      background:var(--bg); color:var(--text);
+      display:flex; justify-content:center; padding:16px;
+    }
+    .wrap{ width:min(980px, 96vw); }
+    .card{
+      background:var(--card); border:1px solid var(--line); border-radius:16px;
+      padding:14px; margin-bottom:12px;
+      box-shadow:0 1px 0 rgba(0,0,0,0.03);
+    }
+    h1{ font-size:18px; margin:0 0 6px; }
+    .sub{ font-size:12px; color:var(--muted); line-height:1.45; }
+    .row{ display:flex; gap:8px; flex-wrap:wrap; align-items:center; margin-top:10px; }
+    input, select{
+      border:1px solid var(--line); border-radius:12px; padding:10px 12px; font-size:14px;
+      background:#fff;
+    }
+    input{ width:min(320px, 100%); }
+    button{
+      border-radius:12px; padding:10px 12px; font-size:14px; cursor:pointer;
+      border:1px solid #111; background:#111; color:#fff;
+    }
+    button.secondary{ background:#fff; color:#111; border:1px solid var(--line); }
+    .small{ font-size:12px; color:var(--muted); margin-top:8px; }
+    .pill{
+      display:inline-flex; gap:6px; align-items:center;
+      border:1px solid var(--line); border-radius:999px;
+      padding:8px 10px; background:#fff; font-size:13px;
+    }
+    .tag{
+      border:1px solid var(--line); padding:4px 8px; border-radius:999px; font-size:12px;
+      background:#f9fafb;
+    }
+
+    /* ---- floating lobby ---- */
+    #lobby{
+      position:relative;
+      width:100%;
+      height:520px;
+      border:1px solid var(--line);
+      border-radius:16px;
+      overflow:hidden;
+      background:
+        radial-gradient(circle at 20% 20%, rgba(0,0,0,0.03), transparent 40%),
+        radial-gradient(circle at 80% 30%, rgba(0,0,0,0.025), transparent 45%),
+        radial-gradient(circle at 30% 80%, rgba(0,0,0,0.02), transparent 50%),
+        #fff;
+    }
+    .bubble{
+      position:absolute;
+      width:72px; height:72px;
+      border-radius:999px;
+      border:1px solid var(--line);
+      background:#fff;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      user-select:none;
+      touch-action:none;
+      cursor:grab;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+    }
+    .bubble:active{ cursor:grabbing; }
+    .emoji{ font-size:24px; line-height:1; }
+    .label{
+      position:absolute;
+      left:50%;
+      top:76px;
+      transform:translateX(-50%);
+      font-size:11px;
+      color:#333;
+      white-space:nowrap;
+      padding:2px 6px;
+      border:1px solid var(--line);
+      border-radius:999px;
+      background:rgba(255,255,255,0.95);
+      max-width:140px;
+      overflow:hidden;
+      text-overflow:ellipsis;
+    }
+    .tooltip{
+      position:absolute;
+      bottom:78px;
+      left:50%;
+      transform:translateX(-50%);
+      min-width:150px;
+      max-width:220px;
+      font-size:12px;
+      color:#111;
+      padding:8px 10px;
+      border:1px solid var(--line);
+      border-radius:12px;
+      background:rgba(255,255,255,0.97);
+      box-shadow: 0 8px 20px rgba(0,0,0,0.10);
+      display:none;
+      pointer-events:none;
+    }
+    .bubble:hover .tooltip{ display:block; }
+    .tt-muted{ color:var(--muted); font-size:11px; margin-top:4px; }
+    .tt-strong{ font-weight:700; }
+    .legend{
+      display:flex; gap:8px; flex-wrap:wrap; margin-top:10px;
+    }
+    .legend .pill{ background:#fff; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="card">
+      <h1>ヒマロビー（ふわふわ）</h1>
+      <div class="sub">
+        ヒマなときに「いま誰かいるか」を見るだけの場所。<br>
+        会話しません／通知しません／追いません。
+      </div>
+
+      <div class="row">
+        <input id="name" placeholder="Spoon名（例：ひろえ）" autocomplete="nickname" />
+        <select id="status">
+          <option value="ひま">ひま</option>
+          <option value="作業中だけど聞ける">作業中だけど聞ける</option>
+          <option value="配信するか迷い中">配信するか迷い中</option>
+          <option value="聞き専">聞き専</option>
+          <option value="配信中">配信中</option>
+        </select>
+        <input id="note" placeholder="一言（任意：例 30分だけ）" />
+      </div>
+
+      <div class="row">
+        <button id="post">今の状態を出す</button>
+        <button id="clearMine" class="secondary">自分の表示を消す</button>
+        <button id="refresh" class="secondary">更新</button>
+        <button id="purge" class="secondary">古い表示を掃除</button>
+        <select id="filter">
+          <option value="all">全部</option>
+          <option value="ひま">ひま</option>
+          <option value="作業中だけど聞ける">作業中だけど聞ける</option>
+          <option value="配信するか迷い中">配信するか迷い中</option>
+          <option value="聞き専">聞き専</option>
+          <option value="配信中">配信中</option>
+        </select>
+        <div class="pill">🟢 人数 <span class="tag" id="count">0</span></div>
+      </div>
+
+      <div class="legend">
+        <div class="pill">🫧 ドラッグで動かせます</div>
+        <div class="pill">🕒 6時間で自動的に消えます</div>
+        <div class="pill">👆 触れると詳細</div>
+      </div>
+
+      <div class="small" id="info"></div>
+    </div>
+
+    <div class="card">
+      <div id="lobby" aria-label="ロビー表示（アイコンが動き回ります）"></div>
+      <div class="small" id="empty" style="display:none;">いま表示中の人はいません。</div>
+    </div>
+  </div>
+
+  <script>
+    const STORAGE_KEY = "hima_lobby_entries_v2";
+    const EXPIRE_MS = 6 * 60 * 60 * 1000; // 6 hours
+
+    const lobby = document.getElementById("lobby");
+    const elName = document.getElementById("name");
+    const elStatus = document.getElementById("status");
+    const elNote = document.getElementById("note");
+    const elInfo = document.getElementById("info");
+    const elCount = document.getElementById("count");
+    const elFilter = document.getElementById("filter");
+    const elEmpty = document.getElementById("empty");
+
+    const EMOJI_BY_STATUS = {
+      "ひま": "🫧",
+      "作業中だけど聞ける": "🧩",
+      "配信するか迷い中": "🤔",
+      "聞き専": "🎧",
+      "配信中": "🎙️",
+    };
+
+    function now(){ return Date.now(); }
+    function normalize(s){ return (s ?? "").toString().trim(); }
+
+    function load(){
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        const arr = raw ? JSON.parse(raw) : [];
+        return Array.isArray(arr) ? arr : [];
+      } catch { return []; }
+    }
+    function save(arr){
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(arr));
+    }
+    function purgeOld(arr){
+      const cutoff = now() - EXPIRE_MS;
+      return arr.filter(e => typeof e.updatedAt === "number" && e.updatedAt >= cutoff);
+    }
+    function timeAgo(ts){
+      const diff = now() - ts;
+      const mins = Math.floor(diff / 60000);
+      if (mins < 1) return "たった今";
+      if (mins < 60) return `${mins}分前`;
+      const hrs = Math.floor(mins / 60);
+      if (hrs < 24) return `${hrs}時間前`;
+      const days = Math.floor(hrs / 24);
+      return `${days}日前`;
+    }
+
+    function upsertEntry(name, status, note){
+      const arr = purgeOld(load());
+      const n = normalize(name);
+      const s = normalize(status);
+      const t = normalize(note);
+
+      const idx = arr.findIndex(e => e.name === n);
+      const entry = { name: n, status: s, note: t, updatedAt: now() };
+      if (idx >= 0) arr[idx] = entry;
+      else arr.push(entry);
+
+      save(arr);
+      return arr;
+    }
+
+    function removeMine(name){
+      const n = normalize(name);
+      const arr = purgeOld(load()).filter(e => e.name !== n);
+      save(arr);
+      return arr;
+    }
+
+    // --------- floating simulation ----------
+    // we keep per-name physics state in memory (not persisted)
+    let bodies = []; // {name, status, note, updatedAt, x,y,vx,vy,r, el, dragging, id}
+    let rafId = null;
+
+    function rand(min, max){ return min + Math.random() * (max - min); }
+
+    function buildBodies(entries){
+      const rect = lobby.getBoundingClientRect();
+      const W = rect.width, H = rect.height;
+
+      // preserve existing positions if same name
+      const prev = new Map(bodies.map(b => [b.name, b]));
+      bodies = entries.map(e => {
+        const old = prev.get(e.name);
+        const r = 36; // bubble radius
+        const b = {
+          ...e,
+          r,
+          x: old ? old.x : rand(r, Math.max(r, W - r)),
+          y: old ? old.y : rand(r, Math.max(r, H - r)),
+          vx: old ? old.vx : rand(-0.35, 0.35),
+          vy: old ? old.vy : rand(-0.35, 0.35),
+          dragging: false,
+          el: null,
+          id: old ? old.id : cryptoRandomId(),
+        };
+        return b;
+      });
+    }
+
+    function cryptoRandomId(){
+      try {
+        const a = new Uint32Array(2);
+        crypto.getRandomValues(a);
+        return `${a[0].toString(16)}${a[1].toString(16)}`;
+      } catch {
+        return String(Math.random()).slice(2);
+      }
+    }
+
+    function clearLobbyDOM(){
+      while (lobby.firstChild) lobby.removeChild(lobby.firstChild);
+    }
+
+    function makeBubbleEl(b){
+      const div = document.createElement("div");
+      div.className = "bubble";
+      div.dataset.name = b.name;
+
+      const emoji = document.createElement("div");
+      emoji.className = "emoji";
+      emoji.textContent = EMOJI_BY_STATUS[b.status] ?? "🫧";
+
+      const label = document.createElement("div");
+      label.className = "label";
+      label.textContent = b.name;
+
+      const tooltip = document.createElement("div");
+      tooltip.className = "tooltip";
+      tooltip.innerHTML = `
+        <div class="tt-strong">${escapeHtml(b.name)}</div>
+        <div>${escapeHtml(b.status)} ・ ${escapeHtml(timeAgo(b.updatedAt))}</div>
+        ${b.note ? `<div class="tt-muted">「${escapeHtml(b.note)}」</div>` : `<div class="tt-muted">（一言なし）</div>`}
+        <div class="tt-muted">クリックで名前コピー</div>
+      `;
+
+      div.appendChild(emoji);
+      div.appendChild(label);
+      div.appendChild(tooltip);
+
+      // click: copy name
+      div.addEventListener("click", async (ev) => {
+        // avoid click after drag
+        if (b._dragMoved) { b._dragMoved = false; return; }
+        try {
+          await navigator.clipboard.writeText(b.name);
+          elInfo.textContent = `「${b.name}」をコピーしました。`;
+        } catch {
+          prompt("コピーしてね", b.name);
+        }
+        ev.stopPropagation();
+      });
+
+      // drag
+      const startDrag = (clientX, clientY) => {
+        b.dragging = true;
+        b._dragMoved = false;
+        div.setPointerCapture?.(b._pointerId ?? 0);
+        b._lastClientX = clientX;
+        b._lastClientY = clientY;
+      };
+
+      const moveDrag = (clientX, clientY) => {
+        if (!b.dragging) return;
+        const dx = clientX - b._lastClientX;
+        const dy = clientY - b._lastClientY;
+        if (Math.abs(dx) + Math.abs(dy) > 2) b._dragMoved = true;
+        b._lastClientX = clientX;
+        b._lastClientY = clientY;
+        b.x += dx;
+        b.y += dy;
+        // give some momentum
+        b.vx = dx * 0.05;
+        b.vy = dy * 0.05;
+      };
+
+      const endDrag = () => { b.dragging = false; };
+
+      div.addEventListener("pointerdown", (ev) => {
+        b._pointerId = ev.pointerId;
+        startDrag(ev.clientX, ev.clientY);
+      });
+      window.addEventListener("pointermove", (ev) => moveDrag(ev.clientX, ev.clientY), { passive:true });
+      window.addEventListener("pointerup", () => endDrag(), { passive:true });
+
+      return div;
+    }
+
+    function escapeHtml(s){
+      return String(s).replace(/[&<>"']/g, m => ({
+        "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
+      }[m]));
+    }
+
+    function renderLobby(entries){
+      clearLobbyDOM();
+      buildBodies(entries);
+
+      for (const b of bodies){
+        const el = makeBubbleEl(b);
+        b.el = el;
+        lobby.appendChild(el);
+      }
+
+      elCount.textContent = String(entries.length);
+      elEmpty.style.display = entries.length ? "none" : "block";
+
+      startLoop();
+    }
+
+    function startLoop(){
+      if (rafId) cancelAnimationFrame(rafId);
+      const step = () => {
+        physicsStep();
+        rafId = requestAnimationFrame(step);
+      };
+      rafId = requestAnimationFrame(step);
+    }
+
+    function physicsStep(){
+      const rect = lobby.getBoundingClientRect();
+      const W = rect.width, H = rect.height;
+
+      // settings
+      const damping = 0.995;      // air resistance
+      const maxSpeed = 1.2;
+      const wallBounce = 0.85;
+      const repelStrength = 0.08; // inter-bubble repulsion
+      const centerPull = 0.001;   // gentle pull to center to avoid stuck corners
+      const jitter = 0.015;       // tiny randomness
+
+      // gentle drift + boundaries
+      for (const b of bodies){
+        if (!b.dragging){
+          // tiny drift + jitter
+          b.vx += rand(-jitter, jitter);
+          b.vy += rand(-jitter, jitter);
+
+          // pull towards center
+          b.vx += (W/2 - b.x) * centerPull;
+          b.vy += (H/2 - b.y) * centerPull;
+
+          // clamp speed
+          const sp = Math.hypot(b.vx, b.vy);
+          if (sp > maxSpeed){
+            b.vx = (b.vx / sp) * maxSpeed;
+            b.vy = (b.vy / sp) * maxSpeed;
+          }
+
+          b.x += b.vx;
+          b.y += b.vy;
+
+          // walls
+          if (b.x < b.r){ b.x = b.r; b.vx = Math.abs(b.vx) * wallBounce; }
+          if (b.x > W - b.r){ b.x = W - b.r; b.vx = -Math.abs(b.vx) * wallBounce; }
+          if (b.y < b.r){ b.y = b.r; b.vy = Math.abs(b.vy) * wallBounce; }
+          if (b.y > H - b.r){ b.y = H - b.r; b.vy = -Math.abs(b.vy) * wallBounce; }
+
+          b.vx *= damping;
+          b.vy *= damping;
+        } else {
+          // keep inside while dragging
+          b.x = Math.max(b.r, Math.min(W - b.r, b.x));
+          b.y = Math.max(b.r, Math.min(H - b.r, b.y));
+        }
+      }
+
+      // repel each other (simple O(n^2), small人数向け)
+      for (let i=0; i<bodies.length; i++){
+        for (let j=i+1; j<bodies.length; j++){
+          const a = bodies[i], c = bodies[j];
+          const dx = c.x - a.x;
+          const dy = c.y - a.y;
+          const dist = Math.hypot(dx, dy) || 0.0001;
+          const minDist = a.r + c.r + 6; // little gap
+
+          if (dist < minDist){
+            const overlap = (minDist - dist);
+            const nx = dx / dist;
+            const ny = dy / dist;
+
+            // separate positions
+            const push = overlap * 0.5;
+            if (!a.dragging){ a.x -= nx * push; a.y -= ny * push; }
+            if (!c.dragging){ c.x += nx * push; c.y += ny * push; }
+
+            // add repulsion velocity
+            const rv = overlap * repelStrength;
+            if (!a.dragging){ a.vx -= nx * rv; a.vy -= ny * rv; }
+            if (!c.dragging){ c.vx += nx * rv; c.vy += ny * rv; }
+          }
+        }
+      }
+
+      // apply transforms
+      for (const b of bodies){
+        if (!b.el) continue;
+        // translate so center is at (x,y)
+        b.el.style.transform = `translate(${(b.x - b.r).toFixed(2)}px, ${(b.y - b.r).toFixed(2)}px)`;
+      }
+    }
+
+    function getEntriesFiltered(){
+      let arr = purgeOld(load());
+      const f = elFilter.value;
+      if (f !== "all") arr = arr.filter(e => e.status === f);
+      // newest first to keep fresh ones in DOM first (not crucial)
+      arr.sort((a,b) => b.updatedAt - a.updatedAt);
+      return arr;
+    }
+
+    function render(){
+      const entries = getEntriesFiltered();
+      elInfo.textContent = `表示期限：6時間／フィルタ：${elFilter.value === "all" ? "全部" : elFilter.value}`;
+      renderLobby(entries);
+    }
+
+    // --- UI handlers ---
+    document.getElementById("post").addEventListener("click", () => {
+      const name = normalize(elName.value);
+      if (!name) { alert("Spoon名を入れてね"); return; }
+      localStorage.setItem("hima_lobby_myname_v2", name);
+      upsertEntry(name, elStatus.value, elNote.value);
+      elInfo.textContent = "出しました！";
+      render();
+    });
+
+    document.getElementById("clearMine").addEventListener("click", () => {
+      const name = normalize(elName.value);
+      if (!name) { alert("Spoon名を入れてね（消す対象）"); return; }
+      removeMine(name);
+      elInfo.textContent = "自分の表示を消しました。";
+      render();
+    });
+
+    document.getElementById("refresh").addEventListener("click", () => render());
+
+    document.getElementById("purge").addEventListener("click", () => {
+      save(purgeOld(load()));
+      elInfo.textContent = "古い表示を掃除しました。";
+      render();
+    });
+
+    elFilter.addEventListener("change", () => render());
+
+    // resize: rebuild lobby positions in bounds
+    window.addEventListener("resize", () => {
+      // keep same entries but rebuild bodies with clamping
+      const entries = getEntriesFiltered();
+      buildBodies(entries);
+    });
+
+    // init
+    (function init(){
+      const savedName = localStorage.getItem("hima_lobby_myname_v2");
+      if (savedName) elName.value = savedName;
+      render();
+    })();
+  </script>
+</body>
+</html>
