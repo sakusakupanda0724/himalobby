@@ -508,7 +508,7 @@
 
 // ===== ここに置く（重要）=====
 async function postStatus(name, status, note) {
-  const { data, error } = await sb.rpc("upsert_lobby", {
+  const { data, error } = await sb.rpc("upsert_lobby_v2", {
     _client_id: clientId,
     _name: name,
     _status: status,
@@ -603,6 +603,7 @@ document.getElementById("clearMine").addEventListener("click", async () => {
 </script>
 </body>
 </html>
+
 
 
 
