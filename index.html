@@ -66,7 +66,28 @@
   border-color: #111;
   background: #f0f0f0;
 }
+.tooltip {
+  position: absolute;
+  bottom: 70px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(255,255,255,0.96);
+  border: 1px solid #ddd;
+  border-radius: 10px;
+  padding: 6px 8px;
+  font-size: 12px;
+  line-height: 1.4;
+  white-space: nowrap;
+  box-shadow: 0 6px 16px rgba(0,0,0,0.12);
+  display: none;
+  pointer-events: none;
+}
 
+.bubble:hover .tooltip {
+  display: block;
+}
+
+    
   </style>
 </head>
 <body>
@@ -207,7 +228,28 @@ function render(entries) {
     };
 
     b.el.className = "bubble";
-    b.el.textContent = e.icon || "🫧";
+
+// アイコン
+const icon = document.createElement("div");
+icon.textContent = e.icon || "🫧";
+b.el.appendChild(icon);
+
+// 名前ラベル
+const label = document.createElement("div");
+label.className = "label";
+label.textContent = e.name;
+b.el.appendChild(label);
+
+// ツールチップ（ステータス＋ひとこと）
+const tip = document.createElement("div");
+tip.className = "tooltip";
+tip.innerHTML = `
+  <div><strong>${e.name}</strong></div>
+  <div>📌 ${e.status}</div>
+  <div>${e.note ? `💬 ${e.note}` : "💬（ひとことなし）"}</div>
+`;
+b.el.appendChild(tip);
+
 
     const label = document.createElement("div");
     label.className = "label";
@@ -286,6 +328,7 @@ loop();
 
 </body>
 </html>
+
 
 
 
