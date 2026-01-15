@@ -496,8 +496,24 @@
       localStorage.setItem("hima_lobby_myname_v2", name);
       upsertEntry(name, elStatus.value, elNote.value);
       elInfo.textContent = "出しました！";
-      render();
     });
+
+    async function postStatus(name, status, note) {
+      const { error } = await sb
+        .from("lobby_entries")
+        .upsert({
+          client_id: clientId,
+          name,
+          status,
+          note,
+          updated_at: new Date().toISOString()
+        }, { onConflict: "client_id" });
+    
+      if (error) {
+        alert(error.message);
+      }
+    }
+
 
     document.getElementById("clearMine").addEventListener("click", () => {
       const name = normalize(elName.value);
@@ -576,6 +592,7 @@
   </script>
 </body>
 </html>
+
 
 
 
