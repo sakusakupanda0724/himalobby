@@ -262,7 +262,6 @@
 <div class="card form-card">
   <div class="form-head">
     <div class="title">いまの状態を出す</div>
-    <div class="desc">入力 → アイコン選択 → 出す、の順でOK。</div>
   </div>
 
   <div class="field">
@@ -399,15 +398,23 @@ async function postStatus(name, status, note) {
   }
 }
 
+let selectedIcon = null;
+const postBtn = document.getElementById("post");
+const iconHint = document.getElementById("iconHint");
+
+postBtn.disabled = true;
+
 document.querySelectorAll(".icon-btn").forEach(btn => {
   btn.onclick = () => {
     selectedIcon = btn.textContent;
 
     document.querySelectorAll(".icon-btn")
       .forEach(b => b.classList.remove("selected"));
+
     btn.classList.add("selected");
 
-    postBtn.disabled = false; // ← ここ！
+    postBtn.disabled = false;
+    iconHint.textContent = `選択中：${selectedIcon}　→「この内容で出す」を押せます`;
   };
 });
 
@@ -546,6 +553,7 @@ loop();
 
 </body>
 </html>
+
 
 
 
