@@ -168,8 +168,8 @@
     </div>
   </div>
 
-  <script>
-     // === Supabase 初期化 ===
+  <script>  
+   // === Supabase 初期化 ===
      
     const STORAGE_KEY = "hima_lobby_entries_v2";
     const EXPIRE_MS = 6 * 60 * 60 * 1000; // 6 hours
@@ -544,10 +544,46 @@
     clientId = crypto.randomUUID();
     localStorage.setItem(CLIENT_KEY, clientId);
   }
+
+  // ③ Supabaseから全件取る関数 ←★ここ重要
+  async function fetchEntries() {
+    const { data, error } = await sb
+      .from("lobby_entries")
+      .select("*")
+      .order("updated_at", { ascending: false });
+
+    if (error) {
+      console.error("fetch error", error);
+      return [];
+    }
+    return data;
+  }
+
+  // ④ 初回表示用関数 ←★ここ重要
+  async function initLobby() {
+    const entries = await fetchEntries();
+    renderLobby(entries); // ← すでにある描画関数
+  }
+
+  // ⑤ Realtime購読 ←★ここ重要
+  sb.channel("lobby")
+    .on(
+      "postgres_changes",
+      { event: "*", schema: "public", table: "lobby_entries" },
+      async () => {
+        const entries = await fetchEntries();
+        renderLobby(entries);
+      }
+    )
+    .subscribe();
+
+  // ⑥ ページ読み込み時に1回だけ実行 ←★これが抜けがち
+  initLobby();
     
   </script>
 </body>
 </html>
+
 
 
 
