@@ -68,18 +68,31 @@
       font-size: 24px;
       cursor: pointer;
     }
-    .label {
-      position: absolute;
-      top: 68px;
-      left: 50%;
-      transform: translateX(-50%);
-      font-size: 11px;
-      background: #fff;
-      border: 1px solid #ddd;
-      border-radius: 999px;
-      padding: 2px 6px;
-      white-space: nowrap;
-    }
+
+
+/* フォーム用ラベル（重ならない） */
+.field-label{
+  display:block;
+  font-size:12px;
+  color:#666;
+  margin: 0 0 6px;
+}
+
+/* ロビーの名前ラベル（吹き出しの下） */
+.bubble-label{
+  position:absolute;
+  top: 68px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 11px;
+  background: #fff;
+  border: 1px solid #ddd;
+  border-radius: 999px;
+  padding: 2px 6px;
+  white-space: nowrap;
+}
+
+    
     .icon-btn {
   font-size: 20px;
   padding: 6px 10px;
@@ -309,10 +322,12 @@
     </div>
   </div>
 
-  <div class="field">
-    <label class="label" for="note">ひとこと（任意）</label>
-    <input id="note" class="input" placeholder="例：30分だけ／いま聞けるよ" />
-  </div>
+ <div class="field">
+  <label class="field-label" for="note">ひとこと（任意）</label>
+  <textarea id="note" class="textarea" rows="2"
+    placeholder="例：30分だけ／いま聞けるよ／作業しながらいます"></textarea>
+</div>
+
 
   <div class="icon-area">
     <div class="icon-title">アイコン（必須）</div>
@@ -499,7 +514,7 @@ b.el.appendChild(tip);
 
 
     const label = document.createElement("div");
-    label.className = "label";
+    label.className = "bubble-label";
     label.textContent = e.name;
     b.el.appendChild(label);
 
@@ -581,6 +596,7 @@ loop();
 
 </body>
 </html>
+
 
 
 
