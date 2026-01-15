@@ -234,12 +234,6 @@ const icon = document.createElement("div");
 icon.textContent = e.icon || "🫧";
 b.el.appendChild(icon);
 
-// 名前ラベル
-const label = document.createElement("div");
-label.className = "label";
-label.textContent = e.name;
-b.el.appendChild(label);
-
 // ツールチップ（ステータス＋ひとこと）
 const tip = document.createElement("div");
 tip.className = "tooltip";
@@ -328,6 +322,7 @@ loop();
 
 </body>
 </html>
+
 
 
 
