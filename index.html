@@ -128,6 +128,20 @@ const elNote = document.getElementById("note");
 const elInfo = document.getElementById("info");
 
 /* =====================
+   icon picker
+===================== */
+let selectedIcon = "🫧";
+
+document.querySelectorAll(".icon-btn").forEach(btn => {
+  btn.onclick = () => {
+    selectedIcon = btn.textContent;
+    document.querySelectorAll(".icon-btn")
+      .forEach(b => b.classList.remove("selected"));
+    btn.classList.add("selected");
+  };
+});
+
+/* =====================
    state
 ===================== */
 let bodies = [];
@@ -136,11 +150,40 @@ let bodies = [];
    fetch
 ===================== */
 async function fetchEntries() {
-  const { data } = await sb
+  const { data, error } = await sb
     .from("lobby_entries")
     .select("*")
     .order("updated_at", { ascending: false });
-  return data ?? [];
+
+  if (error) {
+    console.error(error);
+    return [];
+  }
+  return data;
+}
+
+/* =====================
+   post
+===================== */
+async function postStatus(name, status, note) {
+  const { error } = await sb
+    .from("lobby_entries")
+    .upsert(
+      {
+        client_id: clientId,
+        name,
+        status,
+        note,
+        icon: selectedIcon,
+        updated_at: new Date().toISOString(),
+      },
+      { onConflict: "client_id" }
+    );
+
+  if (error) {
+    console.error(error);
+    alert(error.message);
+  }
 }
 
 /* =====================
@@ -164,15 +207,14 @@ function render(entries) {
     };
 
     b.el.className = "bubble";
-    b.el.textContent = "🫧";
+    b.el.textContent = e.icon || "🫧";
 
     const label = document.createElement("div");
     label.className = "label";
     label.textContent = e.name;
-
     b.el.appendChild(label);
 
-    // 自分だけ削除ボタン
+    // 自分だけ削除可能
     if (e.client_id === clientId) {
       const del = document.createElement("div");
       del.textContent = "✖";
@@ -181,8 +223,7 @@ function render(entries) {
       del.style.right = "-6px";
       del.style.cursor = "pointer";
       del.onclick = async () => {
-        await sb
-          .from("lobby_entries")
+        await sb.from("lobby_entries")
           .delete()
           .eq("client_id", clientId);
         refresh();
@@ -195,21 +236,6 @@ function render(entries) {
   });
 }
 
-let selectedIcon = "🫧"; // デフォルト
-
-document.querySelectorAll(".icon-btn").forEach(btn => {
-  btn.onclick = () => {
-    selectedIcon = btn.textContent;
-
-    document.querySelectorAll(".icon-btn")
-      .forEach(b => b.classList.remove("selected"));
-
-    btn.classList.add("selected");
-  };
-});
-emoji.textContent = b.icon || EMOJI_BY_STATUS[b.status] || "🫧";
-
-  
 /* =====================
    ふわふわ物理
 ===================== */
@@ -220,7 +246,6 @@ function loop() {
   bodies.forEach(b => {
     b.vx += (Math.random() - 0.5) * 0.02;
     b.vy += (Math.random() - 0.5) * 0.02;
-
     b.x += b.vx;
     b.y += b.vy;
 
@@ -235,50 +260,33 @@ function loop() {
 }
 
 /* =====================
-   post
+   UI
 ===================== */
 document.getElementById("post").onclick = async () => {
-  if (!elName.value.trim()) return alert("名前入れてね");
-
-async function postStatus(name, status, note) {
-  const { error } = await sb
-    .from("lobby_entries")
-    .upsert(
-      {
-        client_id: clientId,
-        name,
-        status,
-        note,
-        icon: selectedIcon,
-        updated_at: new Date().toISOString(),
-      },
-      { onConflict: "client_id" }
-    );
-
-  if (error) {
-    console.error(error);
-    alert(error.message);
+  if (!elName.value.trim()) {
+    alert("名前入れてね");
+    return;
   }
-}
-;
+  await postStatus(elName.value, elStatus.value, elNote.value);
+  elInfo.textContent = "出しました！";
+  refresh();
+};
 
 /* =====================
-   refresh
+   init
 ===================== */
 async function refresh() {
   const entries = await fetchEntries();
   render(entries);
 }
 
-/* =====================
-   init
-===================== */
 refresh();
 loop();
-
 </script>
+
 </body>
 </html>
+
 
 
 
