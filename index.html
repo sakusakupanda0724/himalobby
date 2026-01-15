@@ -114,7 +114,7 @@
     }
     .legend .pill{ background:#fff; }
   </style>
-　 <script src="https://ktoqorjcjkqmwygfsbvw.supabase.co"></script>
+　<script src="https://unpkg.com/@supabase/supabase-js@2"></script>
 </head>
 <body>
   <div class="wrap">
@@ -524,13 +524,6 @@
       buildBodies(entries);
     });
 
-    // init
-    (function init(){
-      const savedName = localStorage.getItem("hima_lobby_myname_v2");
-      if (savedName) elName.value = savedName;
-      render();
-    })();
-
 
   const sb = window.supabase.createClient(
     "https://ktoqorjcjkqmwygfsbvw.supabase.co",
@@ -583,6 +576,7 @@
   </script>
 </body>
 </html>
+
 
 
 
