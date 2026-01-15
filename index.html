@@ -8,6 +8,33 @@
   <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
 
   <style>
+.textarea{
+  width: 100%;
+  box-sizing: border-box;
+  display: block;
+
+  margin: 0;                 /* ←ズレ原因になりがち */
+  padding: 12px 14px;
+
+  border-radius: 14px;
+  border: 1px solid var(--line);
+  background: #fff;
+
+  font-size: 16px;
+  font-family: inherit;       /* ←これ重要 */
+  line-height: 1.4;
+  color: var(--text);
+
+  outline: none;
+  resize: none;
+  min-height: 72px;
+}
+
+.textarea::placeholder{
+  color: #98a2b3;
+}
+
+    
     body {
       font-family: system-ui, sans-serif;
       background: #f6f7f8;
@@ -398,24 +425,28 @@ async function postStatus(name, status, note) {
 }
 
 let selectedIcon = null;
+
 const postBtn = document.getElementById("post");
 const iconHint = document.getElementById("iconHint");
+const iconButtons = document.querySelectorAll(".icon-btn");
 
-postBtn.disabled = true;
+function setSelectedIcon(btn){
+  selectedIcon = btn.textContent.trim();
+  iconButtons.forEach(b => b.classList.remove("selected"));
+  btn.classList.add("selected");
 
-document.querySelectorAll(".icon-btn").forEach(btn => {
-  btn.onclick = () => {
-    selectedIcon = btn.textContent;
+  // ✅ ここで必ず押せるようにする
+  postBtn.disabled = false;
+  if (iconHint) iconHint.textContent = `選択中：${selectedIcon}`;
+}
 
-    document.querySelectorAll(".icon-btn")
-      .forEach(b => b.classList.remove("selected"));
-
-    btn.classList.add("selected");
-
-    postBtn.disabled = false;
-    iconHint.textContent = `選択中：${selectedIcon}　→「この内容で出す」を押せます`;
-  };
+// ✅ クリックイベント付与
+iconButtons.forEach(btn => {
+  btn.addEventListener("click", () => setSelectedIcon(btn));
 });
+
+// ✅ ページ読み込み時に「最初のアイコン」を自動選択（押せない事故防止）
+if (iconButtons.length > 0) setSelectedIcon(iconButtons[0]);
 
   
 /* =====================
@@ -552,6 +583,7 @@ loop();
 
 </body>
 </html>
+
 
 
 
