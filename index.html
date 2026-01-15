@@ -514,6 +514,10 @@ async function postStatus(name, status, note) {
     _status: status,
     _note: note,
     _edit_key: editKey
+        const entries = await fetchEntries();
+    console.log("entries after post", entries);
+    renderLobby(entries);
+
   });
 
   console.log("rpc result", data, error);
@@ -603,6 +607,7 @@ document.getElementById("clearMine").addEventListener("click", async () => {
 </script>
 </body>
 </html>
+
 
 
 
