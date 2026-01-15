@@ -79,128 +79,160 @@
 
 <script>
 /* =====================
-   Supabase 初期化
+   Supabase
 ===================== */
 const sb = supabase.createClient(
   "https://ktoqorjcjkqmwygfsbvw.supabase.co",
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt0b3FvcmpjamtxbXd5Z2ZzYnZ3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg0NDk3OTQsImV4cCI6MjA4NDAyNTc5NH0.GRM8Yi6g2lGEvgfatHFeZhB6jPPZRlcNMfQK2d8Kc0I"
+  "★★ anon key ★★"
 );
 
 /* =====================
-   client_id（本人識別）
+   client_id
 ===================== */
-const CLIENT_KEY = "hima_client_id";
-let clientId = localStorage.getItem(CLIENT_KEY);
+const KEY = "hima_client_id";
+let clientId = localStorage.getItem(KEY);
 if (!clientId) {
   clientId = crypto.randomUUID();
-  localStorage.setItem(CLIENT_KEY, clientId);
+  localStorage.setItem(KEY, clientId);
 }
 
 /* =====================
    DOM
 ===================== */
-const lobbyEl = document.getElementById("lobby");
+const lobby = document.getElementById("lobby");
 const elName = document.getElementById("name");
 const elStatus = document.getElementById("status");
 const elNote = document.getElementById("note");
 const elInfo = document.getElementById("info");
 
 /* =====================
-   表示
+   state
+===================== */
+let bodies = [];
+
+/* =====================
+   fetch
+===================== */
+async function fetchEntries() {
+  const { data } = await sb
+    .from("lobby_entries")
+    .select("*")
+    .order("updated_at", { ascending: false });
+  return data ?? [];
+}
+
+/* =====================
+   render
 ===================== */
 function render(entries) {
-  lobbyEl.innerHTML = "";
-  const W = lobbyEl.clientWidth;
-  const H = lobbyEl.clientHeight;
+  lobby.innerHTML = "";
+  bodies = [];
+
+  const W = lobby.clientWidth;
+  const H = lobby.clientHeight;
 
   entries.forEach(e => {
-    const b = document.createElement("div");
-    b.className = "bubble";
-    b.textContent = "🫧";
-    b.style.left = Math.random() * (W - 64) + "px";
-    b.style.top = Math.random() * (H - 64) + "px";
+    const b = {
+      ...e,
+      x: Math.random() * (W - 60),
+      y: Math.random() * (H - 60),
+      vx: (Math.random() - 0.5) * 0.4,
+      vy: (Math.random() - 0.5) * 0.4,
+      el: document.createElement("div")
+    };
+
+    b.el.className = "bubble";
+    b.el.textContent = "🫧";
 
     const label = document.createElement("div");
     label.className = "label";
     label.textContent = e.name;
 
-    b.appendChild(label);
-    lobbyEl.appendChild(b);
+    b.el.appendChild(label);
+
+    // 自分だけ削除ボタン
+    if (e.client_id === clientId) {
+      const del = document.createElement("div");
+      del.textContent = "✖";
+      del.style.position = "absolute";
+      del.style.top = "-6px";
+      del.style.right = "-6px";
+      del.style.cursor = "pointer";
+      del.onclick = async () => {
+        await sb
+          .from("lobby_entries")
+          .delete()
+          .eq("client_id", clientId);
+        refresh();
+      };
+      b.el.appendChild(del);
+    }
+
+    lobby.appendChild(b.el);
+    bodies.push(b);
   });
 }
 
 /* =====================
-   取得
+   ふわふわ物理
 ===================== */
-async function fetchEntries() {
-  const { data, error } = await sb
-    .from("lobby_entries")
-    .select("*")
-    .order("updated_at", { ascending: false });
+function loop() {
+  const W = lobby.clientWidth;
+  const H = lobby.clientHeight;
 
-  if (error) {
-    console.error(error);
-    return [];
-  }
-  return data;
+  bodies.forEach(b => {
+    b.vx += (Math.random() - 0.5) * 0.02;
+    b.vy += (Math.random() - 0.5) * 0.02;
+
+    b.x += b.vx;
+    b.y += b.vy;
+
+    if (b.x < 0 || b.x > W - 60) b.vx *= -1;
+    if (b.y < 0 || b.y > H - 60) b.vy *= -1;
+
+    b.el.style.transform =
+      `translate(${b.x}px, ${b.y}px)`;
+  });
+
+  requestAnimationFrame(loop);
 }
 
+/* =====================
+   post
+===================== */
+document.getElementById("post").onclick = async () => {
+  if (!elName.value.trim()) return alert("名前入れてね");
+
+  await sb.from("lobby_entries").upsert(
+    {
+      client_id: clientId,
+      name: elName.value.trim(),
+      status: elStatus.value,
+      note: elNote.value,
+      updated_at: new Date().toISOString()
+    },
+    { onConflict: "client_id" }
+  );
+
+  elInfo.textContent = "出しました！";
+  refresh();
+};
+
+/* =====================
+   refresh
+===================== */
 async function refresh() {
   const entries = await fetchEntries();
   render(entries);
 }
 
 /* =====================
-   投稿
-===================== */
-document.getElementById("post").onclick = async () => {
-  const name = elName.value.trim();
-  if (!name) {
-    alert("名前を入れてね");
-    return;
-  }
-
-  const { error } = await sb
-    .from("lobby_entries")
-    .upsert({
-      client_id: clientId,
-      name,
-      status: elStatus.value,
-      note: elNote.value,
-      updated_at: new Date().toISOString()
-    }, { onConflict: "client_id" });
-
-  if (error) {
-    alert(error.message);
-    return;
-  }
-
-  elInfo.textContent = "出しました！";
-  await refresh();
-};
-
-/* =====================
-   削除（自分だけ）
-===================== */
-document.getElementById("remove").onclick = async () => {
-  const { error } = await sb
-    .from("lobby_entries")
-    .delete()
-    .eq("client_id", clientId);
-
-  if (error) {
-    alert(error.message);
-    return;
-  }
-
-  elInfo.textContent = "消しました";
-  await refresh();
-};
-
-/* =====================
-   初期表示
+   init
 ===================== */
 refresh();
+loop();
+
 </script>
 </body>
 </html>
+
