@@ -170,7 +170,22 @@
 
   <script>  
    // === Supabase 初期化 ===
-     
+  const { createClient } = window.supabase;
+  
+  const sb = createClient(
+    "https://ktoqorjcjkqmwygfsbvw.supabase.co",
+    "公開 anon key"
+  );
+  
+  // 匿名 client_id
+  const CLIENT_KEY = "hima_lobby_client_id";
+  let clientId = localStorage.getItem(CLIENT_KEY);
+  if (!clientId) {
+    clientId = crypto.randomUUID();
+    localStorage.setItem(CLIENT_KEY, clientId);
+  }
+
+    
     const STORAGE_KEY = "hima_lobby_entries_v2";
     const EXPIRE_MS = 6 * 60 * 60 * 1000; // 6 hours
 
@@ -483,19 +498,21 @@
       return arr;
     }
 
-    function render(){
-      const entries = getEntriesFiltered();
-      elInfo.textContent = `表示期限：6時間／フィルタ：${elFilter.value === "all" ? "全部" : elFilter.value}`;
-      renderLobby(entries);
-    }
-
     // --- UI handlers ---
     document.getElementById("post").addEventListener("click", () => {
       const name = normalize(elName.value);
       if (!name) { alert("Spoon名を入れてね"); return; }
       localStorage.setItem("hima_lobby_myname_v2", name);
-      upsertEntry(name, elStatus.value, elNote.value);
+      document.getElementById("post").addEventListener("click", async () => {
+      const name = normalize(elName.value);
+      if (!name) { alert("Spoon名を入れてね"); return; }
+    
+      localStorage.setItem("hima_lobby_myname_v2", name);
+    
+      await postStatus(name, elStatus.value, elNote.value);
+    
       elInfo.textContent = "出しました！";
+      // ❌ render() や upsertEntry() は呼ばない
     });
 
     async function postStatus(name, status, note) {
@@ -520,18 +537,12 @@
       if (!name) { alert("Spoon名を入れてね（消す対象）"); return; }
       removeMine(name);
       elInfo.textContent = "自分の表示を消しました。";
-      render();
     });
-
-    document.getElementById("refresh").addEventListener("click", () => render());
 
     document.getElementById("purge").addEventListener("click", () => {
       save(purgeOld(load()));
       elInfo.textContent = "古い表示を掃除しました。";
-      render();
     });
-
-    elFilter.addEventListener("change", () => render());
 
     // resize: rebuild lobby positions in bounds
     window.addEventListener("resize", () => {
@@ -592,6 +603,7 @@
   </script>
 </body>
 </html>
+
 
 
 
