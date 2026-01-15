@@ -126,7 +126,7 @@
       </div>
 
       <div class="row">
-        <input id="name" placeholder="Spoon名（例：ひろえ）" autocomplete="nickname" />
+        <input id="name" placeholder="Spoon名（例：たけもと）" autocomplete="nickname" />
         <select id="status">
           <option value="ひま">ひま</option>
           <option value="作業中だけど聞ける">作業中だけど聞ける</option>
@@ -170,7 +170,7 @@
 
   <script>
      // === Supabase 初期化 ===
-  const sb = supabase.createClient(
+  const sb = window.supabase.createClient(
     "https://ktoqorjcjkqmwygfsbvw.supabase.co",
     "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt0b3FvcmpjamtxbXd5Z2ZzYnZ3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg0NDk3OTQsImV4cCI6MjA4NDAyNTc5NH0.GRM8Yi6g2lGEvgfatHFeZhB6jPPZRlcNMfQK2d8Kc0I"
   );
@@ -546,5 +546,6 @@
 
 </body>
 </html>
+
 
 
