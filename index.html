@@ -550,14 +550,6 @@ async function postStatus(name, status, note) {
       buildBodies(entries);
     });
 
-  // === 匿名 client_id ===
-  const CLIENT_KEY = "hima_lobby_client_id";
-  let clientId = localStorage.getItem(CLIENT_KEY);
-  if (!clientId) {
-    clientId = crypto.randomUUID();
-    localStorage.setItem(CLIENT_KEY, clientId);
-  }
-
   // ③ Supabaseから全件取る関数 ←★ここ重要
   async function fetchEntries() {
     const { data, error } = await sb
@@ -595,6 +587,7 @@ async function postStatus(name, status, note) {
 </script>
 </body>
 </html>
+
 
 
 
