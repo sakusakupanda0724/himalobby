@@ -540,7 +540,7 @@ document.getElementById("post").addEventListener("click", async () => {
 });
 
 document.getElementById("clearMine").addEventListener("click", async () => {
-  const { error } = await sb.rpc("delete_lobby", {
+  const { error } = await sb.rpc("delete_lobby_v2", {
     _client_id: clientId,
     _edit_key: editKey
   });
@@ -603,6 +603,7 @@ document.getElementById("clearMine").addEventListener("click", async () => {
 </script>
 </body>
 </html>
+
 
 
 
